@@ -1,0 +1,1868 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Дурак - карточная игра</title>
+    <style>
+        :root {
+            --color-primary: #2c5aa0;
+            --color-secondary: #d4af37;
+            --color-success: #27ae60;
+            --color-danger: #e74c3c;
+            --color-warning: #f39c12;
+            --color-background: #1a472a;
+            --color-surface: #2d5f42;
+            --color-text: #ffffff;
+            --color-border: #4a7c59;
+            --card-width: 70px;
+            --card-height: 100px;
+            --animation-duration: 0.3s;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        html, body {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+            background: var(--color-background);
+            color: var(--color-text);
+            overflow: hidden;
+        }
+
+        /* === GENERAL STYLES === */
+        .btn {
+            padding: 10px 20px;
+            background: var(--color-primary);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+
+        .btn:hover:not(:disabled) {
+            background: #1f3d73;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+        }
+
+        .btn:active:not(:disabled) {
+            transform: translateY(0);
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .btn--secondary {
+            background: var(--color-secondary);
+            color: #000;
+        }
+
+        .btn--success {
+            background: var(--color-success);
+        }
+
+        .btn--danger {
+            background: var(--color-danger);
+        }
+
+        .btn--small {
+            padding: 6px 12px;
+            font-size: 12px;
+        }
+
+        .btn--wide {
+            width: 100%;
+            margin-bottom: 10px;
+        }
+
+        /* === SCREENS === */
+        .screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: var(--color-background);
+            display: none;
+            flex-direction: column;
+            z-index: 100;
+        }
+
+        .screen.active {
+            display: flex;
+        }
+
+        /* === MAIN MENU === */
+        #menuScreen {
+            justify-content: center;
+            align-items: center;
+        }
+
+        .menu-container {
+            text-align: center;
+            background: rgba(0, 0, 0, 0.3);
+            padding: 40px;
+            border-radius: 12px;
+            border: 2px solid var(--color-border);
+        }
+
+        .menu-title {
+            font-size: 48px;
+            margin-bottom: 30px;
+            color: var(--color-secondary);
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+            font-weight: 700;
+        }
+
+        .menu-subtitle {
+            font-size: 14px;
+            color: #aaa;
+            margin-bottom: 30px;
+        }
+
+        .menu-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            min-width: 200px;
+        }
+
+        .menu-buttons .btn {
+            width: 100%;
+            font-size: 16px;
+            padding: 12px 24px;
+        }
+
+        /* === SETTINGS SCREEN === */
+        #settingsScreen {
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .settings-container {
+            background: rgba(0, 0, 0, 0.4);
+            border: 2px solid var(--color-border);
+            border-radius: 12px;
+            padding: 30px;
+            max-width: 400px;
+            width: 100%;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .settings-title {
+            font-size: 28px;
+            margin-bottom: 20px;
+            color: var(--color-secondary);
+            text-align: center;
+        }
+
+        .setting-item {
+            margin-bottom: 20px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid var(--color-border);
+        }
+
+        .setting-item:last-child {
+            border-bottom: none;
+        }
+
+        .setting-label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+
+        .setting-value {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .radio-btn {
+            background: var(--color-surface);
+            border: 2px solid var(--color-border);
+            color: white;
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.2s;
+        }
+
+        .radio-btn.active {
+            background: var(--color-primary);
+            border-color: var(--color-secondary);
+            color: white;
+        }
+
+        .radio-btn:hover {
+            border-color: var(--color-secondary);
+        }
+
+        input[type="range"] {
+            width: 100%;
+            height: 6px;
+            cursor: pointer;
+        }
+
+        .volume-display {
+            text-align: center;
+            font-size: 12px;
+            color: #aaa;
+            margin-top: 4px;
+        }
+
+        .checkbox-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .checkbox-wrapper input[type="checkbox"] {
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+        }
+
+        .settings-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .settings-buttons .btn {
+            flex: 1;
+        }
+
+        /* === RULES SCREEN === */
+        #rulesScreen {
+            padding: 20px;
+            overflow-y: auto;
+            justify-content: flex-start;
+        }
+
+        .rules-container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: rgba(0, 0, 0, 0.3);
+            border: 2px solid var(--color-border);
+            border-radius: 12px;
+            padding: 25px;
+        }
+
+        .rules-title {
+            font-size: 28px;
+            color: var(--color-secondary);
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .rules-content {
+            font-size: 13px;
+            line-height: 1.6;
+            color: #ddd;
+        }
+
+        .rules-content h3 {
+            color: var(--color-secondary);
+            margin-top: 15px;
+            margin-bottom: 8px;
+        }
+
+        .rules-content ul {
+            margin: 8px 0;
+            padding-left: 20px;
+        }
+
+        .rules-content li {
+            margin-bottom: 4px;
+        }
+
+        .rules-back {
+            margin-top: 20px;
+        }
+
+        /* === GAME SCREEN === */
+        #gameScreen {
+            flex-direction: column;
+            padding: 10px;
+            justify-content: flex-start;
+        }
+
+        .game-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+            background: rgba(0, 0, 0, 0.3);
+            padding: 10px;
+            border-radius: 8px;
+            border: 1px solid var(--color-border);
+        }
+
+        .game-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--color-secondary);
+        }
+
+        .game-status {
+            font-size: 13px;
+            color: #aaa;
+            text-align: right;
+            flex: 1;
+        }
+
+        .game-status.player-turn {
+            color: #4ade80;
+        }
+
+        .game-status.ai-turn {
+            color: #fbbf24;
+        }
+
+        .game-pause-btn {
+            padding: 6px 12px;
+            font-size: 12px;
+            margin-left: 10px;
+        }
+
+        .game-board {
+            flex: 1;
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+            overflow: hidden;
+        }
+
+        .board-left {
+            width: 120px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .board-center {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .deck-area {
+            background: rgba(0, 0, 0, 0.3);
+            border: 2px dashed var(--color-border);
+            border-radius: 8px;
+            padding: 10px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 140px;
+        }
+
+        .deck-info {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .deck-card {
+            position: relative;
+            width: var(--card-width);
+            height: var(--card-height);
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 6px;
+            border: 2px solid var(--color-secondary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            font-weight: bold;
+            color: white;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.4);
+            cursor: default;
+        }
+
+        .trump-card {
+            position: relative;
+            width: var(--card-width);
+            height: var(--card-height);
+        }
+
+        .deck-count {
+            font-size: 12px;
+            color: #aaa;
+        }
+
+        .trump-label {
+            font-size: 11px;
+            color: #aaa;
+            margin-top: 5px;
+        }
+
+        .table-area {
+            flex: 1;
+            background: rgba(0, 0, 0, 0.2);
+            border: 2px solid var(--color-border);
+            border-radius: 8px;
+            padding: 15px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            align-content: flex-start;
+            overflow-y: auto;
+        }
+
+        .ai-area {
+            display: flex;
+            gap: 5px;
+            flex-wrap: wrap;
+            margin-bottom: 10px;
+            background: rgba(0, 0, 0, 0.3);
+            padding: 10px;
+            border-radius: 8px;
+            border: 1px solid var(--color-border);
+            min-height: 120px;
+            align-content: flex-start;
+        }
+
+        .ai-cards-label {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            font-size: 11px;
+            color: #aaa;
+            background: rgba(0, 0, 0, 0.5);
+            padding: 2px 6px;
+            border-radius: 4px;
+        }
+
+        .player-hand-container {
+            margin-bottom: 10px;
+        }
+
+        .player-hand-label {
+            font-size: 11px;
+            color: #aaa;
+            margin-bottom: 8px;
+            padding-left: 5px;
+        }
+
+        .player-hand {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            padding: 10px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 8px;
+            border: 1px solid var(--color-border);
+            min-height: 130px;
+            align-content: flex-start;
+            overflow-y: auto;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            padding: 10px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 8px;
+            border: 1px solid var(--color-border);
+        }
+
+        .action-buttons .btn {
+            flex: 1;
+            min-width: 120px;
+        }
+
+        /* === CARD STYLES === */
+        .card {
+            position: relative;
+            width: var(--card-width);
+            height: var(--card-height);
+            background: white;
+            border: 2px solid #333;
+            border-radius: 6px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            user-select: none;
+            transition: all var(--animation-duration);
+            font-weight: 700;
+            font-size: 12px;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.4);
+        }
+
+        .card.disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .card.disabled:hover {
+            transform: none;
+            box-shadow: none;
+        }
+
+        .card.selected {
+            border: 3px solid #4ade80;
+            box-shadow: 0 0 10px rgba(74, 222, 128, 0.5);
+        }
+
+        .card.suggested {
+            border: 2px dashed var(--color-warning);
+            opacity: 0.8;
+        }
+
+        .card.in-table {
+            pointer-events: none;
+        }
+
+        /* Card rank and suit styles */
+        .card-suit {
+            font-size: 16px;
+            line-height: 1;
+            margin: 2px 0;
+        }
+
+        .card-rank {
+            font-size: 14px;
+        }
+
+        .card-red .card-suit {
+            color: #e74c3c;
+        }
+
+        .card-black .card-suit {
+            color: #333;
+        }
+
+        /* Card back (for AI cards) */
+        .card-back {
+            position: relative;
+            width: var(--card-width);
+            height: var(--card-height);
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 6px;
+            border: 2px solid var(--color-secondary);
+            cursor: default;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--color-secondary);
+            font-size: 18px;
+            font-weight: bold;
+        }
+
+        .card-back::before {
+            content: '❋';
+            font-size: 20px;
+        }
+
+        /* Card pair display in table */
+        .card-pair {
+            display: flex;
+            gap: 5px;
+            align-items: center;
+        }
+
+        .card-pair::after {
+            content: 'vs';
+            font-size: 11px;
+            color: #aaa;
+        }
+
+        /* === PAUSE DIALOG === */
+        .overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 200;
+        }
+
+        .overlay.active {
+            display: flex;
+        }
+
+        .dialog {
+            background: var(--color-surface);
+            border: 2px solid var(--color-border);
+            border-radius: 12px;
+            padding: 30px;
+            text-align: center;
+            min-width: 300px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+        }
+
+        .dialog-title {
+            font-size: 24px;
+            color: var(--color-secondary);
+            margin-bottom: 20px;
+        }
+
+        .dialog-buttons {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .dialog-buttons .btn {
+            flex: 1;
+            min-width: 120px;
+        }
+
+        /* === GAME END DIALOG === */
+        .end-game-title {
+            font-size: 32px;
+            margin-bottom: 10px;
+        }
+
+        .end-game-message {
+            font-size: 16px;
+            color: #ddd;
+            margin-bottom: 20px;
+        }
+
+        .end-game-title.win {
+            color: var(--color-success);
+        }
+
+        .end-game-title.lose {
+            color: var(--color-danger);
+        }
+
+        /* === LOG AREA === */
+        .game-log {
+            height: 80px;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--color-border);
+            border-radius: 6px;
+            padding: 8px;
+            font-size: 12px;
+            color: #aaa;
+            overflow-y: auto;
+            line-height: 1.4;
+            margin-bottom: 10px;
+        }
+
+        .log-entry {
+            margin-bottom: 4px;
+            padding-bottom: 4px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .log-entry:last-child {
+            border-bottom: none;
+        }
+
+        .log-entry.action {
+            color: #4ade80;
+        }
+
+        .log-entry.warning {
+            color: var(--color-warning);
+        }
+
+        .log-entry.error {
+            color: var(--color-danger);
+        }
+
+        /* === RESPONSIVE === */
+        @media (max-width: 1024px) {
+            :root {
+                --card-width: 60px;
+                --card-height: 90px;
+            }
+
+            .game-board {
+                gap: 8px;
+            }
+
+            .board-left {
+                width: 90px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            :root {
+                --card-width: 50px;
+                --card-height: 75px;
+            }
+
+            .game-board {
+                gap: 5px;
+                margin-bottom: 8px;
+            }
+
+            .board-left {
+                width: 70px;
+            }
+
+            .board-center {
+                gap: 5px;
+            }
+
+            .table-area {
+                padding: 10px;
+            }
+
+            .deck-area {
+                min-height: 120px;
+            }
+
+            .deck-card {
+                width: 50px;
+                height: 75px;
+                font-size: 16px;
+            }
+
+            .action-buttons .btn {
+                min-width: 100px;
+                padding: 8px 16px;
+                font-size: 12px;
+            }
+
+            .game-header {
+                flex-direction: column;
+                gap: 8px;
+                align-items: flex-start;
+            }
+
+            .game-pause-btn {
+                margin-left: 0;
+            }
+
+            .menu-container {
+                padding: 30px 20px;
+            }
+
+            .menu-title {
+                font-size: 36px;
+                margin-bottom: 20px;
+            }
+
+            .settings-container {
+                padding: 20px;
+            }
+
+            .rules-container {
+                padding: 15px;
+            }
+
+            .rules-content {
+                font-size: 12px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            :root {
+                --card-width: 45px;
+                --card-height: 65px;
+            }
+
+            .game-board {
+                gap: 4px;
+            }
+
+            .board-left {
+                width: 65px;
+            }
+
+            .deck-area {
+                min-height: 100px;
+                padding: 8px;
+            }
+
+            .table-area {
+                padding: 8px;
+            }
+
+            .player-hand {
+                gap: 6px;
+                min-height: 110px;
+            }
+
+            .action-buttons {
+                gap: 6px;
+                padding: 8px;
+            }
+
+            .action-buttons .btn {
+                min-width: 80px;
+                padding: 6px 12px;
+                font-size: 11px;
+                flex: 0.5;
+            }
+
+            .game-log {
+                height: 60px;
+                font-size: 11px;
+            }
+
+            .menu-title {
+                font-size: 28px;
+            }
+
+            .dialog {
+                min-width: 250px;
+                padding: 20px;
+            }
+
+            .dialog-title {
+                font-size: 20px;
+            }
+        }
+    </style>
+
+    <script>
+        // === CONSTANTS & CONFIGURATION ===
+        const SUITS = {
+            'S': { symbol: '♠', name: 'Пики', color: 'black' },
+            'H': { symbol: '♥', name: 'Черви', color: 'red' },
+            'D': { symbol: '♦', name: 'Бубны', color: 'red' },
+            'C': { symbol: '♣', name: 'Трефы', color: 'black' }
+        };
+
+        const RANKS = {
+            '2': { display: '2', value: 2 },
+            '3': { display: '3', value: 3 },
+            '4': { display: '4', value: 4 },
+            '5': { display: '5', value: 5 },
+            '6': { display: '6', value: 6 },
+            '7': { display: '7', value: 7 },
+            '8': { display: '8', value: 8 },
+            '9': { display: '9', value: 9 },
+            '10': { display: '10', value: 10 },
+            'J': { display: 'В', value: 11 },
+            'Q': { display: 'Д', value: 12 },
+            'K': { display: 'К', value: 13 },
+            'A': { display: 'Т', value: 14 }
+        };
+
+        const GAME_STATES = {
+            MENU: 'menu',
+            SETTINGS: 'settings',
+            RULES: 'rules',
+            PLAYING: 'playing',
+            PAUSED: 'paused',
+            END_GAME: 'endGame'
+        };
+
+        const GAME_PHASES = {
+            ATTACK: 'attack',
+            DEFEND: 'defend',
+            THROW: 'throw',
+            RESOLVE: 'resolve',
+            DRAW: 'draw',
+            END: 'end'
+        };
+
+        const AI_LEVELS = {
+            EASY: 'easy',
+            MEDIUM: 'medium',
+            HARD: 'hard'
+        };
+
+        // === GAME STATE ===
+        let gameState = {
+            currentScreen: GAME_STATES.MENU,
+            deck: [],
+            discardPile: [],
+            trump: null,
+            players: {
+                human: { hand: [], id: 'human' },
+                ai: { hand: [], id: 'ai' }
+            },
+            table: [],
+            phase: GAME_PHASES.ATTACK,
+            currentAttacker: 'human',
+            selectedCard: null,
+            settings: {
+                aiLevel: AI_LEVELS.MEDIUM,
+                animationSpeed: 1.0,
+                soundEnabled: false,
+                showHints: true,
+                confirmActions: true,
+                autoSave: true,
+                gameMode: 'throw' // 'throw' or 'transfer'
+            },
+            stats: {
+                humanWins: 0,
+                aiWins: 0
+            },
+            gameLog: [],
+            isPaused: false
+        };
+
+        // === UTILITY FUNCTIONS ===
+        function createCard(rank, suit) {
+            return { rank, suit, id: `${rank}${suit}` };
+        }
+
+        function createDeck() {
+            const deck = [];
+            for (const rank of Object.keys(RANKS)) {
+                for (const suit of Object.keys(SUITS)) {
+                    deck.push(createCard(rank, suit));
+                }
+            }
+            return shuffle(deck);
+        }
+
+        function shuffle(arr) {
+            const copy = [...arr];
+            for (let i = copy.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [copy[i], copy[j]] = [copy[j], copy[i]];
+            }
+            return copy;
+        }
+
+        function getCardValue(card) {
+            return RANKS[card.rank].value;
+        }
+
+        function canBeatCard(attackCard, defendCard, trumpSuit) {
+            if (defendCard.suit === trumpSuit && attackCard.suit !== trumpSuit) {
+                return true;
+            }
+            if (defendCard.suit !== attackCard.suit) {
+                return false;
+            }
+            return getCardValue(defendCard) > getCardValue(attackCard);
+        }
+
+        function getValidCardsForThrow(hand, tableCards) {
+            const onTableRanks = new Set();
+            for (const pair of tableCards) {
+                onTableRanks.add(pair.attack.rank);
+                if (pair.defend) {
+                    onTableRanks.add(pair.defend.rank);
+                }
+            }
+            return hand.filter(card => onTableRanks.has(card.rank));
+        }
+
+        function log(message, type = 'action') {
+            const entry = { message, type, timestamp: Date.now() };
+            gameState.gameLog.push(entry);
+            if (gameState.gameLog.length > 20) {
+                gameState.gameLog.shift();
+            }
+        }
+
+        // === INITIALIZATION & SETUP ===
+        function initializeGame() {
+            gameState.deck = createDeck();
+            gameState.discardPile = [];
+            gameState.trump = gameState.deck[gameState.deck.length - 1];
+            gameState.players.human.hand = [];
+            gameState.players.ai.hand = [];
+            gameState.table = [];
+            gameState.phase = GAME_PHASES.ATTACK;
+            gameState.currentAttacker = 'human';
+            gameState.selectedCard = null;
+            gameState.gameLog = [];
+
+            dealCards();
+            log('Игра начата. Козырь: ' + gameState.trump.rank + SUITS[gameState.trump.suit].symbol);
+        }
+
+        function dealCards() {
+            for (let i = 0; i < 6; i++) {
+                if (gameState.deck.length > 0) gameState.players.human.hand.push(gameState.deck.pop());
+                if (gameState.deck.length > 0) gameState.players.ai.hand.push(gameState.deck.pop());
+            }
+        }
+
+        // === AI LOGIC ===
+        function getAIMove() {
+            const hand = gameState.players.ai.hand;
+
+            if (gameState.phase === GAME_PHASES.ATTACK) {
+                return getAIAttackCard(hand);
+            } else if (gameState.phase === GAME_PHASES.DEFEND) {
+                return getAIDefenseCard(hand);
+            } else if (gameState.phase === GAME_PHASES.THROW) {
+                return getAIThrowCard(hand);
+            }
+            return null;
+        }
+
+        function getAIAttackCard(hand) {
+            if (hand.length === 0) return null;
+
+            const validCards = getValidStartingCards(hand, gameState.players.human.hand.length);
+            if (validCards.length === 0) return null;
+
+            if (gameState.settings.aiLevel === AI_LEVELS.EASY) {
+                return validCards[0];
+            } else if (gameState.settings.aiLevel === AI_LEVELS.MEDIUM) {
+                return validCards.sort((a, b) => getCardValue(a) - getCardValue(b))[0];
+            } else {
+                return validCards.sort((a, b) => getCardValue(a) - getCardValue(b))[0];
+            }
+        }
+
+        function getValidStartingCards(hand, opponentCardCount) {
+            if (gameState.table.length === 0) {
+                return hand.slice(0, Math.min(6, hand.length));
+            }
+
+            const maxTableCards = Math.min(6, opponentCardCount);
+            if (gameState.table.length >= maxTableCards) {
+                return [];
+            }
+
+            return getValidCardsForThrow(hand, gameState.table);
+        }
+
+        function getAIDefenseCard(hand) {
+            if (hand.length === 0) return null;
+
+            const undefendedPair = gameState.table.find(pair => !pair.defend);
+            if (!undefendedPair) return null;
+
+            const validCards = hand.filter(card => 
+                canBeatCard(undefendedPair.attack, card, gameState.trump.suit)
+            );
+
+            if (validCards.length === 0) return null;
+
+            if (gameState.settings.aiLevel === AI_LEVELS.EASY) {
+                return validCards[0];
+            }
+
+            return validCards.sort((a, b) => getCardValue(a) - getCardValue(b))[0];
+        }
+
+        function getAIThrowCard(hand) {
+            if (hand.length === 0) return null;
+
+            const validCards = getValidCardsForThrow(hand, gameState.table);
+            if (validCards.length === 0) return null;
+
+            if (gameState.settings.aiLevel === AI_LEVELS.EASY) {
+                return validCards[Math.floor(Math.random() * validCards.length)];
+            }
+
+            return validCards.sort((a, b) => getCardValue(a) - getCardValue(b))[0];
+        }
+
+        // === GAME LOGIC ===
+        function makePlayerMove(card) {
+            if (!isValidMove(card)) {
+                log('Некорректный ход!', 'error');
+                return false;
+            }
+
+            if (gameState.phase === GAME_PHASES.ATTACK) {
+                gameState.table.push({ attack: card, defend: null });
+                gameState.players.human.hand = gameState.players.human.hand.filter(c => c.id !== card.id);
+                log('Вы атакуете: ' + card.rank + SUITS[card.suit].symbol);
+                gameState.phase = GAME_PHASES.DEFEND;
+            } else if (gameState.phase === GAME_PHASES.DEFEND) {
+                const undefendedPair = gameState.table.find(p => !p.defend);
+                if (undefendedPair) {
+                    undefendedPair.defend = card;
+                    gameState.players.human.hand = gameState.players.human.hand.filter(c => c.id !== card.id);
+                    log('Вы отбиваетесь: ' + card.rank + SUITS[card.suit].symbol);
+                    gameState.phase = GAME_PHASES.THROW;
+                }
+            } else if (gameState.phase === GAME_PHASES.THROW) {
+                gameState.table.push({ attack: card, defend: null });
+                gameState.players.human.hand = gameState.players.human.hand.filter(c => c.id !== card.id);
+                log('Вы подкидываете: ' + card.rank + SUITS[card.suit].symbol);
+            }
+
+            gameState.selectedCard = null;
+            return true;
+        }
+
+        function isValidMove(card) {
+            if (gameState.phase === GAME_PHASES.ATTACK) {
+                const validCards = getValidStartingCards(gameState.players.human.hand, gameState.players.ai.hand.length);
+                return validCards.some(c => c.id === card.id);
+            } else if (gameState.phase === GAME_PHASES.DEFEND) {
+                const undefendedPair = gameState.table.find(p => !p.defend);
+                if (!undefendedPair) return false;
+                return canBeatCard(undefendedPair.attack, card, gameState.trump.suit);
+            } else if (gameState.phase === GAME_PHASES.THROW) {
+                return getValidCardsForThrow(gameState.players.human.hand, gameState.table).some(c => c.id === card.id);
+            }
+            return false;
+        }
+
+        function playerTakesCards() {
+            gameState.players.human.hand.push(...gameState.table.map(p => p.attack));
+            gameState.players.human.hand.push(...gameState.table.filter(p => p.defend).map(p => p.defend));
+            gameState.table = [];
+            gameState.phase = GAME_PHASES.ATTACK;
+            gameState.currentAttacker = 'ai';
+            log('Вы взяли карты', 'warning');
+        }
+
+        function playerConcedes() {
+            gameState.players.human.hand.push(...gameState.table.map(p => p.attack));
+            gameState.players.human.hand.push(...gameState.table.filter(p => p.defend).map(p => p.defend));
+            gameState.table = [];
+            gameState.phase = GAME_PHASES.ATTACK;
+            gameState.currentAttacker = 'ai';
+            log('Вы сбросили карты', 'warning');
+        }
+
+        function completeRound() {
+            for (const pair of gameState.table) {
+                gameState.discardPile.push(pair.attack);
+                if (pair.defend) gameState.discardPile.push(pair.defend);
+            }
+            gameState.table = [];
+
+            const nextAttacker = gameState.currentAttacker === 'human' ? 'ai' : 'human';
+            gameState.currentAttacker = nextAttacker;
+            gameState.phase = GAME_PHASES.DRAW;
+
+            performDraw();
+        }
+
+        function performDraw() {
+            const maxCards = gameState.deck.length > 0 ? 6 : gameState.players.human.hand.length;
+            
+            while (gameState.players.human.hand.length < maxCards && gameState.deck.length > 0) {
+                gameState.players.human.hand.push(gameState.deck.pop());
+            }
+            
+            while (gameState.players.ai.hand.length < maxCards && gameState.deck.length > 0) {
+                gameState.players.ai.hand.push(gameState.deck.pop());
+            }
+
+            checkGameEnd();
+        }
+
+        function checkGameEnd() {
+            const humanEmpty = gameState.players.human.hand.length === 0;
+            const aiEmpty = gameState.players.ai.hand.length === 0;
+            const deckEmpty = gameState.deck.length === 0;
+
+            if (deckEmpty && (humanEmpty || aiEmpty)) {
+                gameState.phase = GAME_PHASES.END;
+                if (humanEmpty && !aiEmpty) {
+                    endGame('win');
+                } else if (!humanEmpty && aiEmpty) {
+                    endGame('lose');
+                } else {
+                    endGame('draw');
+                }
+            } else {
+                gameState.phase = GAME_PHASES.ATTACK;
+            }
+        }
+
+        function endGame(result) {
+            if (result === 'win') {
+                gameState.stats.humanWins++;
+                log('Вы победили!', 'action');
+            } else if (result === 'lose') {
+                gameState.stats.aiWins++;
+                log('Вы проиграли.', 'error');
+            } else {
+                log('Ничья.', 'action');
+            }
+            saveGameState();
+            showEndGameDialog(result);
+        }
+
+        function processTurn() {
+            if (gameState.currentAttacker === 'ai' && gameState.phase === GAME_PHASES.ATTACK) {
+                if (gameState.players.ai.hand.length === 0) {
+                    completeRound();
+                    return;
+                }
+
+                const move = getAIMove();
+                if (move) {
+                    setTimeout(() => {
+                        gameState.table.push({ attack: move, defend: null });
+                        gameState.players.ai.hand = gameState.players.ai.hand.filter(c => c.id !== move.id);
+                        log('ИИ атакует: ' + move.rank + SUITS[move.suit].symbol);
+                        gameState.phase = GAME_PHASES.DEFEND;
+                        render();
+                        processTurn();
+                    }, 500 / gameState.settings.animationSpeed);
+                } else {
+                    completeRound();
+                }
+            } else if (gameState.currentAttacker === 'ai' && gameState.phase === GAME_PHASES.DEFEND) {
+                const move = getAIMove();
+                if (move) {
+                    setTimeout(() => {
+                        const undefendedPair = gameState.table.find(p => !p.defend);
+                        if (undefendedPair) {
+                            undefendedPair.defend = move;
+                            gameState.players.ai.hand = gameState.players.ai.hand.filter(c => c.id !== move.id);
+                            log('ИИ отбивается: ' + move.rank + SUITS[move.suit].symbol);
+                            gameState.phase = GAME_PHASES.THROW;
+                        }
+                        render();
+                        processTurn();
+                    }, 500 / gameState.settings.animationSpeed);
+                } else {
+                    log('ИИ берет карты', 'warning');
+                    playerTakesCards();
+                    render();
+                    setTimeout(processTurn, 500 / gameState.settings.animationSpeed);
+                }
+            } else if (gameState.currentAttacker === 'ai' && gameState.phase === GAME_PHASES.THROW) {
+                const move = getAIMove();
+                if (move && gameState.table.filter(p => p.defend).length < Math.min(6, gameState.players.human.hand.length)) {
+                    setTimeout(() => {
+                        gameState.table.push({ attack: move, defend: null });
+                        gameState.players.ai.hand = gameState.players.ai.hand.filter(c => c.id !== move.id);
+                        log('ИИ подкидывает: ' + move.rank + SUITS[move.suit].symbol);
+                        gameState.phase = GAME_PHASES.DEFEND;
+                        render();
+                        processTurn();
+                    }, 500 / gameState.settings.animationSpeed);
+                } else {
+                    completeRound();
+                    render();
+                    setTimeout(processTurn, 500 / gameState.settings.animationSpeed);
+                }
+            }
+        }
+
+        // === UI RENDERING ===
+        function render() {
+            if (gameState.currentScreen === GAME_STATES.PLAYING) {
+                renderGame();
+            }
+        }
+
+        function renderGame() {
+            updateStatus();
+            renderAIHand();
+            renderTable();
+            renderDeck();
+            renderPlayerHand();
+            renderActionButtons();
+            renderLog();
+        }
+
+        function updateStatus() {
+            const statusEl = document.querySelector('.game-status');
+            if (!statusEl) return;
+
+            let statusText = '';
+            if (gameState.phase === GAME_PHASES.ATTACK) {
+                if (gameState.currentAttacker === 'human') {
+                    statusText = '👤 Ваш ход (атака)';
+                    statusEl.className = 'game-status player-turn';
+                } else {
+                    statusText = '🤖 ИИ атакует...';
+                    statusEl.className = 'game-status ai-turn';
+                }
+            } else if (gameState.phase === GAME_PHASES.DEFEND) {
+                if (gameState.currentAttacker === 'human') {
+                    statusText = '🤖 ИИ отбивается...';
+                    statusEl.className = 'game-status ai-turn';
+                } else {
+                    statusText = '👤 Вы отбиваетесь';
+                    statusEl.className = 'game-status player-turn';
+                }
+            } else if (gameState.phase === GAME_PHASES.THROW) {
+                if (gameState.currentAttacker === 'human') {
+                    statusText = '👤 Подкиньте карту';
+                    statusEl.className = 'game-status player-turn';
+                } else {
+                    statusText = '🤖 ИИ подкидывает...';
+                    statusEl.className = 'game-status ai-turn';
+                }
+            } else if (gameState.phase === GAME_PHASES.DRAW) {
+                statusText = 'Раздача карт...';
+                statusEl.className = 'game-status';
+            }
+
+            statusEl.textContent = statusText;
+        }
+
+        function renderAIHand() {
+            const aiAreaEl = document.querySelector('.ai-area');
+            if (!aiAreaEl) return;
+
+            aiAreaEl.innerHTML = '<div class="ai-cards-label">Карты ИИ (' + gameState.players.ai.hand.length + ')</div>';
+            for (let i = 0; i < gameState.players.ai.hand.length; i++) {
+                const cardEl = document.createElement('div');
+                cardEl.className = 'card-back';
+                aiAreaEl.appendChild(cardEl);
+            }
+        }
+
+        function renderTable() {
+            const tableEl = document.querySelector('.table-area');
+            if (!tableEl) return;
+
+            tableEl.innerHTML = '';
+            for (const pair of gameState.table) {
+                const pairEl = document.createElement('div');
+                pairEl.className = 'card-pair';
+
+                const attackEl = createCardElement(pair.attack, true);
+                pairEl.appendChild(attackEl);
+
+                if (pair.defend) {
+                    const defendEl = createCardElement(pair.defend, true);
+                    pairEl.appendChild(defendEl);
+                }
+
+                tableEl.appendChild(pairEl);
+            }
+        }
+
+        function renderDeck() {
+            const deckAreaEl = document.querySelector('.deck-area');
+            if (!deckAreaEl) return;
+
+            deckAreaEl.innerHTML = '<div class="deck-info">';
+            deckAreaEl.innerHTML += '<div class="deck-card">' + gameState.deck.length + '</div>';
+            deckAreaEl.innerHTML += '<div class="deck-count">Карт в колоде</div>';
+            
+            if (gameState.trump) {
+                deckAreaEl.innerHTML += '<div class="trump-card">' + createCardElement(gameState.trump, true).outerHTML + '</div>';
+                deckAreaEl.innerHTML += '<div class="trump-label">Козырь</div>';
+            }
+            deckAreaEl.innerHTML += '</div>';
+        }
+
+        function renderPlayerHand() {
+            const handEl = document.querySelector('.player-hand');
+            if (!handEl) return;
+
+            handEl.innerHTML = '';
+            for (const card of gameState.players.human.hand) {
+                const cardEl = createCardElement(card, false);
+                cardEl.addEventListener('click', () => selectCard(card));
+                handEl.appendChild(cardEl);
+            }
+        }
+
+        function renderActionButtons() {
+            const buttonsEl = document.querySelector('.action-buttons');
+            if (!buttonsEl) return;
+
+            buttonsEl.innerHTML = '';
+
+            if (gameState.phase === GAME_PHASES.ATTACK && gameState.currentAttacker === 'human') {
+                if (gameState.table.some(p => p.defend)) {
+                    const endBtn = document.createElement('button');
+                    endBtn.className = 'btn btn--success';
+                    endBtn.textContent = 'Бито';
+                    endBtn.addEventListener('click', completeRound);
+                    buttonsEl.appendChild(endBtn);
+                }
+            }
+
+            if (gameState.phase === GAME_PHASES.DEFEND && gameState.currentAttacker === 'ai') {
+                const takeBtn = document.createElement('button');
+                takeBtn.className = 'btn btn--danger';
+                takeBtn.textContent = 'Взять карты';
+                takeBtn.addEventListener('click', playerTakesCards);
+                buttonsEl.appendChild(takeBtn);
+
+                if (gameState.table.some(p => p.defend)) {
+                    const concede = document.createElement('button');
+                    concede.className = 'btn btn--secondary';
+                    concede.textContent = 'Сбросить';
+                    concede.addEventListener('click', playerConcedes);
+                    buttonsEl.appendChild(concede);
+                }
+            }
+
+            const pauseBtn = document.createElement('button');
+            pauseBtn.className = 'btn btn--secondary btn--small';
+            pauseBtn.textContent = '⏸ Пауза';
+            pauseBtn.addEventListener('click', togglePause);
+            buttonsEl.appendChild(pauseBtn);
+        }
+
+        function renderLog() {
+            const logEl = document.querySelector('.game-log');
+            if (!logEl) return;
+
+            logEl.innerHTML = '';
+            for (const entry of gameState.gameLog) {
+                const entryEl = document.createElement('div');
+                entryEl.className = 'log-entry ' + entry.type;
+                entryEl.textContent = entry.message;
+                logEl.appendChild(entryEl);
+            }
+            logEl.scrollTop = logEl.scrollHeight;
+        }
+
+        function createCardElement(card, inTable = false) {
+            const cardEl = document.createElement('div');
+            cardEl.className = 'card' + (inTable ? ' in-table' : '');
+
+            const suitColor = SUITS[card.suit].color;
+            cardEl.classList.add('card-' + suitColor);
+
+            cardEl.innerHTML = `
+                <div class="card-rank">${RANKS[card.rank].display}</div>
+                <div class="card-suit">${SUITS[card.suit].symbol}</div>
+            `;
+
+            return cardEl;
+        }
+
+        function selectCard(card) {
+            if (gameState.phase === GAME_PHASES.END || gameState.isPaused) return;
+
+            if (!isValidMove(card)) {
+                log('Некорректный ход!', 'error');
+                return;
+            }
+
+            if (gameState.selectedCard?.id === card.id) {
+                gameState.selectedCard = null;
+            } else {
+                gameState.selectedCard = card;
+                makePlayerMove(card);
+                render();
+
+                if (gameState.phase === GAME_PHASES.DEFEND && gameState.currentAttacker === 'human') {
+                    gameState.phase = GAME_PHASES.THROW;
+                }
+
+                setTimeout(processTurn, 600 / gameState.settings.animationSpeed);
+            }
+        }
+
+        // === SCREEN MANAGEMENT ===
+        function showScreen(screen) {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            const screenEl = document.getElementById(screen + 'Screen');
+            if (screenEl) screenEl.classList.add('active');
+            gameState.currentScreen = screen;
+        }
+
+        function startNewGame() {
+            initializeGame();
+            showScreen(GAME_STATES.PLAYING);
+            gameState.isPaused = false;
+            render();
+            processTurn();
+        }
+
+        function togglePause() {
+            gameState.isPaused = !gameState.isPaused;
+            const overlay = document.querySelector('.overlay');
+            if (gameState.isPaused) {
+                overlay.classList.add('active');
+            } else {
+                overlay.classList.remove('active');
+            }
+        }
+
+        function showEndGameDialog(result) {
+            const overlay = document.querySelector('.overlay');
+            const dialog = document.querySelector('.dialog');
+            const title = dialog.querySelector('.dialog-title');
+            const message = dialog.querySelector('.end-game-message');
+
+            if (result === 'win') {
+                title.textContent = '🎉 Победа!';
+                title.className = 'dialog-title end-game-title win';
+                message.textContent = 'Вы выиграли партию!';
+            } else if (result === 'lose') {
+                title.textContent = '💀 Поражение';
+                title.className = 'dialog-title end-game-title lose';
+                message.textContent = 'Вы проиграли. Следующий раз повезет!';
+            } else {
+                title.textContent = '🤝 Ничья';
+                title.className = 'dialog-title end-game-title';
+                message.textContent = 'Игра завершена вничью.';
+            }
+
+            gameState.phase = GAME_PHASES.END;
+            overlay.classList.add('active');
+        }
+
+        // === SETTINGS ===
+        function applySettings() {
+            const levelRadios = document.querySelectorAll('input[name="difficulty"]');
+            for (const radio of levelRadios) {
+                if (radio.checked) {
+                    gameState.settings.aiLevel = radio.value;
+                    break;
+                }
+            }
+
+            const speedRadios = document.querySelectorAll('input[name="speed"]');
+            for (const radio of speedRadios) {
+                if (radio.checked) {
+                    gameState.settings.animationSpeed = parseFloat(radio.value);
+                    break;
+                }
+            }
+
+            gameState.settings.soundEnabled = document.getElementById('soundCheck')?.checked ?? false;
+            gameState.settings.showHints = document.getElementById('hintsCheck')?.checked ?? true;
+            gameState.settings.confirmActions = document.getElementById('confirmCheck')?.checked ?? true;
+            gameState.settings.autoSave = document.getElementById('saveCheck')?.checked ?? true;
+            gameState.settings.gameMode = document.getElementById('modeSelect')?.value ?? 'throw';
+
+            saveGameState();
+        }
+
+        function resetSave() {
+            localStorage.removeItem('gameState');
+            alert('Сохранение удалено');
+            showScreen(GAME_STATES.SETTINGS);
+        }
+
+        // === SAVE/LOAD ===
+        function saveGameState() {
+            if (gameState.settings.autoSave) {
+                localStorage.setItem('gameState', JSON.stringify({
+                    ...gameState,
+                    currentScreen: GAME_STATES.MENU
+                }));
+            }
+        }
+
+        function loadGameState() {
+            const saved = localStorage.getItem('gameState');
+            if (saved) {
+                const loaded = JSON.parse(saved);
+                Object.assign(gameState, loaded);
+                return true;
+            }
+            return false;
+        }
+
+        // === EVENT HANDLERS ===
+        function setupEventListeners() {
+            // Menu
+            document.getElementById('btnNewGame')?.addEventListener('click', startNewGame);
+            document.getElementById('btnContinue')?.addEventListener('click', () => {
+                showScreen(GAME_STATES.PLAYING);
+                render();
+                processTurn();
+            });
+            document.getElementById('btnSettings')?.addEventListener('click', () => showScreen(GAME_STATES.SETTINGS));
+            document.getElementById('btnRules')?.addEventListener('click', () => showScreen(GAME_STATES.RULES));
+
+            // Settings
+            document.getElementById('btnSaveSettings')?.addEventListener('click', () => {
+                applySettings();
+                showScreen(GAME_STATES.MENU);
+            });
+            document.getElementById('btnResetSave')?.addEventListener('click', resetSave);
+            document.getElementById('btnBackSettings')?.addEventListener('click', () => showScreen(GAME_STATES.MENU));
+
+            // Rules
+            document.getElementById('btnBackRules')?.addEventListener('click', () => showScreen(GAME_STATES.MENU));
+
+            // Pause dialog
+            document.getElementById('btnResume')?.addEventListener('click', togglePause);
+            document.getElementById('btnNewGamePause')?.addEventListener('click', () => {
+                togglePause();
+                startNewGame();
+            });
+            document.getElementById('btnSettingsPause')?.addEventListener('click', () => {
+                togglePause();
+                showScreen(GAME_STATES.SETTINGS);
+            });
+            document.getElementById('btnMenuPause')?.addEventListener('click', () => {
+                togglePause();
+                showScreen(GAME_STATES.MENU);
+            });
+
+            // End game dialog
+            document.getElementById('btnNewGameEnd')?.addEventListener('click', () => {
+                document.querySelector('.overlay').classList.remove('active');
+                startNewGame();
+            });
+            document.getElementById('btnMenuEnd')?.addEventListener('click', () => {
+                document.querySelector('.overlay').classList.remove('active');
+                showScreen(GAME_STATES.MENU);
+            });
+
+            // Keyboard
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape') {
+                    if (gameState.currentScreen === GAME_STATES.PLAYING) {
+                        togglePause();
+                    }
+                }
+            });
+
+            // Check for continue
+            const continueBtn = document.getElementById('btnContinue');
+            if (continueBtn) {
+                continueBtn.style.display = loadGameState() ? 'block' : 'none';
+            }
+        }
+
+        // === INITIALIZATION ===
+        document.addEventListener('DOMContentLoaded', () => {
+            setupEventListeners();
+            loadGameState();
+            showScreen(GAME_STATES.MENU);
+            render();
+        });
+    </script>
+</head>
+<body>
+    <!-- MENU SCREEN -->
+    <div id="menuScreen" class="screen active">
+        <div class="menu-container">
+            <h1 class="menu-title">♠️ ДУРАК ♠️</h1>
+            <p class="menu-subtitle">Карточная игра 1v1 против компьютера</p>
+            <div class="menu-buttons">
+                <button id="btnNewGame" class="btn">Новая игра</button>
+                <button id="btnContinue" class="btn">Продолжить</button>
+                <button id="btnSettings" class="btn">Настройки</button>
+                <button id="btnRules" class="btn">Правила</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- SETTINGS SCREEN -->
+    <div id="settingsScreen" class="screen">
+        <div class="settings-container">
+            <h2 class="settings-title">⚙️ Настройки</h2>
+
+            <div class="setting-item">
+                <label class="setting-label">Сложность ИИ:</label>
+                <div class="setting-value">
+                    <input type="radio" name="difficulty" value="easy" id="diffEasy">
+                    <label for="diffEasy" class="radio-btn">Легкая</label>
+                    <input type="radio" name="difficulty" value="medium" id="diffMedium" checked>
+                    <label for="diffMedium" class="radio-btn active">Средняя</label>
+                    <input type="radio" name="difficulty" value="hard" id="diffHard">
+                    <label for="diffHard" class="radio-btn">Сложная</label>
+                </div>
+            </div>
+
+            <div class="setting-item">
+                <label class="setting-label">Скорость анимации:</label>
+                <div class="setting-value">
+                    <input type="radio" name="speed" value="0.5" id="speedSlow">
+                    <label for="speedSlow" class="radio-btn">Медленно</label>
+                    <input type="radio" name="speed" value="1" id="speedNormal" checked>
+                    <label for="speedNormal" class="radio-btn active">Нормально</label>
+                    <input type="radio" name="speed" value="2" id="speedFast">
+                    <label for="speedFast" class="radio-btn">Быстро</label>
+                </div>
+            </div>
+
+            <div class="setting-item">
+                <label class="setting-label">Режим игры:</label>
+                <div class="setting-value">
+                    <select id="modeSelect" class="form-control" style="width: 100%; padding: 8px; margin-top: 8px; border-radius: 4px; background: var(--color-surface); border: 1px solid var(--color-border); color: white;">
+                        <option value="throw">Подкидной (классический)</option>
+                        <option value="transfer">Переводной</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="setting-item">
+                <label class="setting-label">
+                    <div class="checkbox-wrapper">
+                        <input type="checkbox" id="soundCheck">
+                        <span>Звук</span>
+                    </div>
+                </label>
+            </div>
+
+            <div class="setting-item">
+                <label class="setting-label">
+                    <div class="checkbox-wrapper">
+                        <input type="checkbox" id="hintsCheck" checked>
+                        <span>Подсказки</span>
+                    </div>
+                </label>
+            </div>
+
+            <div class="setting-item">
+                <label class="setting-label">
+                    <div class="checkbox-wrapper">
+                        <input type="checkbox" id="confirmCheck" checked>
+                        <span>Подтверждение действий</span>
+                    </div>
+                </label>
+            </div>
+
+            <div class="setting-item">
+                <label class="setting-label">
+                    <div class="checkbox-wrapper">
+                        <input type="checkbox" id="saveCheck" checked>
+                        <span>Автосохранение</span>
+                    </div>
+                </label>
+            </div>
+
+            <div class="setting-item">
+                <button id="btnResetSave" class="btn btn--danger btn--wide btn--small">🗑️ Сбросить сохранение</button>
+            </div>
+
+            <div class="settings-buttons">
+                <button id="btnSaveSettings" class="btn btn--success">Сохранить</button>
+                <button id="btnBackSettings" class="btn btn--secondary">Назад</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- RULES SCREEN -->
+    <div id="rulesScreen" class="screen">
+        <div class="rules-container">
+            <h2 class="rules-title">📚 Правила игры</h2>
+            <div class="rules-content">
+                <h3>Цель игры</h3>
+                <p>Избавиться от всех карт раньше соперника. Последний игрок с картами на руках - "Дурак".</p>
+
+                <h3>Подготовка</h3>
+                <ul>
+                    <li>Используется колода из 52 карт (от 2 до Туза, 4 масти)</li>
+                    <li>Каждому игроку раздается по 6 карт</li>
+                    <li>Следующая карта открывается - её масть это козырь на партию</li>
+                </ul>
+
+                <h3>Ход игры</h3>
+                <ul>
+                    <li><strong>Атака:</strong> Атакующий кладет одну или несколько карт одного достоинства</li>
+                    <li><strong>Защита:</strong> Защищающийся побивает карты старшей картой той же масти или козырем</li>
+                    <li><strong>Подкид:</strong> После защиты можно подкинуть карты того же достоинства, что на столе</li>
+                    <li>Нельзя подкинуть больше карт, чем у защищающегося на руке</li>
+                </ul>
+
+                <h3>Результат раунда</h3>
+                <ul>
+                    <li><strong>Если защита удалась:</strong> Карты уходят в "биту", защитник ходит</li>
+                    <li><strong>Если защита не удалась:</strong> Защитник забирает все карты со стола, атакующий ходит</li>
+                </ul>
+
+                <h3>Добор карт</h3>
+                <p>После раунда игроки добирают карты из колоды до 6 штук. Первым добирает атакующий.</p>
+
+                <h3>Победа</h3>
+                <p>Побеждает тот, кто первым избавился от всех карт при пустой колоде.</p>
+            </div>
+            <div class="rules-back">
+                <button id="btnBackRules" class="btn btn--secondary btn--wide">← Назад в меню</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- GAME SCREEN -->
+    <div id="gameScreen" class="screen">
+        <div class="game-header">
+            <div class="game-title">♠️ ДУРАК</div>
+            <div class="game-status">Загрузка...</div>
+            <button class="game-pause-btn btn btn--secondary btn--small">⏸ Пауза</button>
+        </div>
+
+        <div class="game-log"></div>
+
+        <div class="game-board">
+            <div class="board-left">
+                <div class="deck-area"></div>
+            </div>
+            <div class="board-center">
+                <div class="ai-area"></div>
+                <div class="table-area"></div>
+            </div>
+        </div>
+
+        <div class="player-hand-container">
+            <div class="player-hand-label">👤 Ваши карты:</div>
+            <div class="player-hand"></div>
+        </div>
+
+        <div class="action-buttons"></div>
+    </div>
+
+    <!-- PAUSE OVERLAY -->
+    <div class="overlay">
+        <div class="dialog">
+            <div class="dialog-title">⏸ Пауза</div>
+            <div class="dialog-buttons">
+                <button id="btnResume" class="btn btn--success">Продолжить</button>
+                <button id="btnSettingsPause" class="btn">Настройки</button>
+                <button id="btnNewGamePause" class="btn btn--secondary">Новая игра</button>
+                <button id="btnMenuPause" class="btn btn--danger">В меню</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- END GAME OVERLAY (reuses overlay styling) -->
+    <div class="overlay" id="endGameOverlay" style="display: none;">
+        <div class="dialog" style="text-align: center;">
+            <div class="dialog-title end-game-title">🎉 Результат</div>
+            <div class="end-game-message">Игра завершена</div>
+            <div class="dialog-buttons">
+                <button id="btnNewGameEnd" class="btn btn--success">Играть еще</button>
+                <button id="btnMenuEnd" class="btn btn--danger">В меню</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Modify showEndGameDialog to use endGameOverlay
+        const originalShowEndGameDialog = showEndGameDialog;
+        showEndGameDialog = function(result) {
+            const overlay = document.getElementById('endGameOverlay');
+            const dialog = overlay.querySelector('.dialog');
+            const title = dialog.querySelector('.dialog-title');
+            const message = dialog.querySelector('.end-game-message');
+
+            if (result === 'win') {
+                title.textContent = '🎉 Победа!';
+                title.className = 'dialog-title end-game-title win';
+                message.textContent = 'Вы выиграли партию! (' + gameState.stats.humanWins + ' побед)';
+            } else if (result === 'lose') {
+                title.textContent = '💀 Поражение';
+                title.className = 'dialog-title end-game-title lose';
+                message.textContent = 'Вы проиграли. (' + gameState.stats.aiWins + ' побед у ИИ)';
+            } else {
+                title.textContent = '🤝 Ничья';
+                title.className = 'dialog-title end-game-title';
+                message.textContent = 'Игра завершена вничью.';
+            }
+
+            gameState.phase = GAME_PHASES.END;
+            overlay.style.display = 'flex';
+        };
+    </script>
+</body>
+</html>
